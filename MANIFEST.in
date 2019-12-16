@@ -1,0 +1,5 @@
+include README.md
+include LICENSE.txt
+include ggtools/data/etopo5.nc
+include ggtools/grace_filter/data/DDK/*
+include ggtools/grace_filter/src/matlab/*.m
