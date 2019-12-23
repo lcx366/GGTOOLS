@@ -547,14 +547,14 @@ Reconfirm the time coverage of the SLR C20 data and the GRACE GSM data.
 ```python
 print('SLR C20 solutions start month: ',slr_c20.time_coverage_start)
 print('SLR C20 solutions end month: ',slr_c20.time_coverage_end)
-print('Combined GRACE GSM solutions start month: ',gsm_comb.time_coverage_start)
-print('Combined GRACE GSM solutions end month: ',gsm_comb.time_coverage_end)
+print('Combined deaveraged GRACE GSM solutions start month: ',gsm_deaverage_comb.time_coverage_start)
+print('Combined deaveraged GRACE GSM solutions end month: ',gsm_deaverage_comb.time_coverage_end)
 ```
 
     SLR C20 solutions start month:  2002-04
     SLR C20 solutions end month:  2019-10
-    Combined GRACE GSM solutions start month:  2002-04
-    Combined GRACE GSM solutions end month:  2019-10
+    Combined deaveraged GRACE GSM solutions start month:  2002-04
+    Combined deaveraged GRACE GSM solutions end month:  2019-10
 
 
 Generally, the latest GRACE GSM monthly solution is released one month later than the SLR C20 solution, so the number of monthly solutions for SLR C20 is almost always one more than that for GRACE GSM.
