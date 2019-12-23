@@ -19,11 +19,6 @@ setup(
         ],
     packages=setuptools.find_packages(),
     include_package_data=True,
-    package_data = {
-        'ggtools.data': ['*.nc'],
-        'ggtools.grace_filter.data': ['DDK/*'],
-        'ggtools.grace_filter.src': ['matlab/*.m'],
-        },
     install_requires=[
         'scipy',
         'numpy',
@@ -33,7 +28,6 @@ setup(
         'GPy',
         'xarray',
         'h5py',
-        'oct2py',
         'requests',
         'astropy',
         'pySphericalPolygon',
