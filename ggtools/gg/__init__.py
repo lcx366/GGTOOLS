@@ -124,3 +124,4 @@ from .lcurve import L_curve
 from .utils import generate_nodes,solid_angle_ratio
 from .mascon import mascon_download,read_mascon
 from .ddk_gaussian import ddk_gaussian
+from .landmask import landmask
