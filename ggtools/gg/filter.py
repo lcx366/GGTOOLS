@@ -1,6 +1,9 @@
 import numpy as np
-from oct2py import octave
-import pkg_resources
+from os import getenv,path,makedirs
+from urllib.request import urlretrieve
+
+from .DDK_filter.read_BIN import read_BIN
+from .DDK_filter.filterSH import filterSH
 
 def filter_ddk(filter_type,shc,shc_std=None):
     '''
@@ -29,28 +32,40 @@ def filter_ddk(filter_type,shc,shc_std=None):
     '''  
     filter_shc = np.zeros_like(shc)
     filter_shc_std = np.zeros_like(shc_std)
-        
-    # add the matlab scripts path
-    scripts_path = pkg_resources.resource_filename('ggtools', 'grace_filter/src/matlab') 
-    octave.addpath(scripts_path)   
+
+    # Download the DDK filter matrices
+    home = getenv('HOME')
+    direc = home + '/src/ddk-data/'
+    ddk_types = ['1d14','1d13','1d12','5d11','1d11','5d10','1d10','5d9']   
+    urldir = 'https://raw.githubusercontent.com/strawpants/GRACE-filter/master/data/DDK/'
+    
+    if not path.exists(direc): 
+        makedirs(direc)
+        print('Downloading the DDK filter matrices',end=' ... ')
+        for ddk_type in ddk_types:
+            ddk_bin = 'Wbd_2-120.a_' + ddk_type + 'p_4'
+            url = urldir + ddk_bin
+            urlretrieve(url, direc + ddk_bin)
+        print('Finished')
+
     # read the filter matrix
-    filter_path = pkg_resources.resource_filename('ggtools', 'grace_filter/data/DDK/')
+
     if filter_type == 'DDK1':
-        Wbd = octave.read_BIN(filter_path + 'Wbd_2-120.a_1d14p_4')
+        Wbd = read_BIN(direc + 'Wbd_2-120.a_1d14p_4')
     elif filter_type == 'DDK2':
-        Wbd = octave.read_BIN(filter_path + 'Wbd_2-120.a_1d13p_4')
+        Wbd = read_BIN(direc + 'Wbd_2-120.a_1d13p_4')
     elif filter_type == 'DDK3':
-        Wbd = octave.read_BIN(filter_path + 'Wbd_2-120.a_1d12p_4')
+        Wbd = read_BIN(direc + 'Wbd_2-120.a_1d12p_4')
     elif filter_type == 'DDK4':
-        Wbd = octave.read_BIN(filter_path + 'Wbd_2-120.a_5d11p_4')
+        Wbd = read_BIN(direc + 'Wbd_2-120.a_5d11p_4')
     elif filter_type == 'DDK5':
-        Wbd = octave.read_BIN(filter_path + 'Wbd_2-120.a_1d11p_4')
+        Wbd = read_BIN(direc + 'Wbd_2-120.a_1d11p_4')
     elif filter_type == 'DDK6':
-        Wbd = octave.read_BIN(filter_path + 'Wbd_2-120.a_5d10p_4')
+        Wbd = read_BIN(direc + 'Wbd_2-120.a_5d10p_4')
     elif filter_type == 'DDK7':
-        Wbd = octave.read_BIN(filter_path + 'Wbd_2-120.a_1d10p_4')
+        Wbd = read_BIN(direc + 'Wbd_2-120.a_1d10p_4')
     elif filter_type == 'DDK8':
-        Wbd = octave.read_BIN(filter_path + 'Wbd_2-120.a_5d9p_4')
+        Wbd = read_BIN(direc + 'Wbd_2-120.a_5d9p_4')
     else:
         raise Exception('Currently, only DDK1~DDK8 are feasible.')
             
@@ -58,20 +73,20 @@ def filter_ddk(filter_type,shc,shc_std=None):
             
         if shc_std is None:
             for i in range(shc.shape[0]):
-                filter_shc[i,0],filter_shc[i,1] = octave.filterSH(Wbd,shc[i,0],shc[i,1],nout=2) 
+                filter_shc[i] = filterSH(Wbd,shc[i]) 
             return filter_shc 
         else:
             for i in range(shc.shape[0]):
-                filter_shc[i,0],filter_shc[i,1],filter_shc_std[i,0],filter_shc_std[i,1] = octave.filterSH(Wbd,shc[i,0],shc[i,1],shc_std[i,0],shc_std[i,1],nout=4) 
+                filter_shc[i],filter_shc_std[i] = filterSH(Wbd,shc[i],shc_std[i]) 
             return filter_shc,filter_shc_std
             
     elif shc.ndim == 3: 
             
         if shc_std is None:
-            filter_shc[0],filter_shc[1] = octave.filterSH(Wbd,shc[0],shc[1],nout=2) 
+            filter_shc = filterSH(Wbd,shc) 
             return filter_shc
         else:
-            filter_shc[0],filter_shc[1],filter_shc_std[0],filter_shc_std[1] = octave.filterSH(Wbd,shc[0],shc[1],shc_std[0],shc_std[1],nout=4) 
+            filter_shc,filter_shc_std = filterSH(Wbd,shc,shc_std) 
             return filter_shc,filter_shc_std
     else:
         raise Exception('Dimension of the SHC data is not correct. It should be 3 or 4.')
