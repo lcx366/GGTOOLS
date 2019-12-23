@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
-import pkg_resources
-
+from os import getenv,path,makedirs
+from urllib.request import urlretrieve
 from pyshtools.shclasses import SHCoeffs,SHGrid
 
 def landmask(lmax,trunc_lat=None):
@@ -25,9 +25,19 @@ def landmask(lmax,trunc_lat=None):
 
     For more information, please refer to https://shtools.oca.eu/shtools/public/pyshexpanddh.html
     '''
-    data_path = pkg_resources.resource_filename('ggtools', 'data/')
-    dataFile = data_path+'etopo5.nc' 
-    ds = xr.open_dataset(dataFile)
+    # Download ETOPO5 data
+    home = getenv('HOME')
+    direc = home + '/src/etopo-data/'
+    etopo_file = 'etopo5.nc'
+    url = 'https://raw.githubusercontent.com/dcherian/tools/master/ROMS/arango/bathymetry/etopo5.nc'
+    
+    if not path.exists(direc): 
+        makedirs(direc)
+        print('Downloading the ETOPO5 Earth Surface Topography Data Set',end=' ... ')
+        urlretrieve(url, direc + etopo_file)
+        print('Finished')
+
+    ds = xr.open_dataset(direc + etopo_file)
     
     # Flip the data along the latitude direction to change the latitude range from [90S ∼ 90N] to [90N ∼ 90S]
     topo_grids = np.flip(np.array(ds['topo']),0)[:-1,:]
