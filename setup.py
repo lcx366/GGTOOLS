@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='ggtools',
-    version='1.1.1',
+    version='1.1.3',
     long_description_content_type='text/markdown',
     description='A package to handle the GRACE and GRACE-FO GSM data and GLDAS grid data',
     long_description=open('README.md', 'rb').read().decode('utf-8'),
@@ -23,7 +23,7 @@ setup(
         'scipy',
         'numpy',
         'matplotlib',
-        'cartopy',
+        'netcdf4',
         'pyshtools',
         'GPy',
         'xarray',
