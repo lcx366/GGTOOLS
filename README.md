@@ -9,7 +9,10 @@ handle the GRACE(Gravity Recovery and Climate Experiment) and GRACE-FO(Follow-on
 
 ## How to Install 
 
-GGTOOLS can usually be installed with `pip install ggtools`.
+GGTOOLS can be installed with the following two steps
+
+1. `conda install cartopy`
+2. `pip install ggtools`
 
 ## How to use
 
