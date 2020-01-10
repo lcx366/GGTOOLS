@@ -1,5 +1,5 @@
 import numpy as np
-import pySphericalPolygon as pysp
+from sphericalpolygon import create_polygon
 from pyshtools.spectralanalysis import Curve2Mask
 
 from ..ggclasses.class_Nodes import Nodes
@@ -258,7 +258,7 @@ def generate_nodes(grids,points,research_boundary,mode=None):
     layer = np.zeros((nlat,nlon)).astype(int)
     
     # construct a polygon region from points
-    study_area = pysp.SpericalPolygon(research_boundary)
+    study_area = create_polygon(research_boundary)
         
     if mode is None:
         nodes = np.zeros_like(points)
