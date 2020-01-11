@@ -1192,7 +1192,7 @@ print(gldas.lons)
         vmax:           179.5
 
 
-For more details, please refer to `read_gldas?` and `gldas?`. Note: If an error message such as unable to read the .nc4 files occurs, please install the [netcef](https://cloud-gc.readthedocs.io/en/latest/chapter04_developer-guide/install-basic.html) library.
+For more details, please refer to `read_gldas?` and `gldas?`. Note: If an error message such as unable to read the .nc4 files occurs, please install the [netcef](https://cloud-gc.readthedocs.io/en/latest/chapter04_developer-guide/install-basic.html) library. For macOS, just `brew install netcef`.
 
 ### Calculate Terrestrial Water Storage Change
 
