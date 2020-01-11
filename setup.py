@@ -27,7 +27,6 @@ setup(
         'pyshtools',
         'GPy',
         'xarray',
-        'h5py',
         'requests',
         'astropy',
         'sphericalpolygon',
