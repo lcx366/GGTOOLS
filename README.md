@@ -14,6 +14,8 @@ GGTOOLS can be installed with the following two steps
 1. `conda install cartopy`
 2. `pip install ggtools`
 
+Note: If an error message of unable to read the .nc4 files occurs, please install the [netcef](https://cloud-gc.readthedocs.io/en/latest/chapter04_developer-guide/install-basic.html) library.
+
 ## How to use
 
 ## GRACE
