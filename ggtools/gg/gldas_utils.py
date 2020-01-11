@@ -1,7 +1,5 @@
 import numpy as np
 import xarray as xr
-from scipy.interpolate import RectSphereBivariateSpline
-from pyshtools.shclasses import SHCoeffs,SHGrid
 
 from os import getenv,path,makedirs,walk,remove
 import requests
