@@ -45,6 +45,12 @@ def filter_ddk(filter_type,shc,shc_std=None):
         for ddk_type in ddk_types:
             ddk_bin = 'Wbd_2-120.a_' + ddk_type + 'p_4'
             url = urldir + ddk_bin
+            for idownload in range(3):
+                try: 
+                    urlretrieve(url, direc + ddk_bin)
+                    break
+                except:
+                    print('\nTry downloading again')   
             urlretrieve(url, direc + ddk_bin)
         print('Finished')
 
