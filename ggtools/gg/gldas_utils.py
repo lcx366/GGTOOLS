@@ -178,7 +178,7 @@ def read_gldas(start_date=None,end_date=None,res = '1deg',source = 'NOAH'):
         datum = xr.open_dataset(filename)
         date_issued.append(datum.history[17:27])
         data.append(datum) 
-    lons,lats = datum['lon'][:],datum['lat'][:]              
+    lons,lats = datum['lon'],datum['lat']           
     
     info['title'] = datum.title
     info['summary'] = datum.comment
