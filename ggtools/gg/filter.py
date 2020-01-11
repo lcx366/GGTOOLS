@@ -1,6 +1,7 @@
 import numpy as np
 from os import getenv,path,makedirs
 from urllib.request import urlretrieve
+from time import sleep
 
 from .DDK_filter.read_BIN import read_BIN
 from .DDK_filter.filterSH import filterSH
@@ -41,18 +42,18 @@ def filter_ddk(filter_type,shc,shc_std=None):
     
     if not path.exists(direc): 
         makedirs(direc)
-        print('Downloading the DDK filter matrices',end=' ... ')
         for ddk_type in ddk_types:
             ddk_bin = 'Wbd_2-120.a_' + ddk_type + 'p_4'
             url = urldir + ddk_bin
             for idownload in range(3):
+                print('Downloading the DDK filter matrix ... ' + ddk_bin,end=' ... ')
                 try: 
                     urlretrieve(url, direc + ddk_bin)
+                    print('Transfer completed')
                     break
                 except:
-                    print('\nTry downloading again')   
-            urlretrieve(url, direc + ddk_bin)
-        print('Finished')
+                    print('Transfer failed, try downloading again.') 
+                sleep(30)  # Pause for 30 seconds     
 
     # read the filter matrix
 
