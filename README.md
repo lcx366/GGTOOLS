@@ -14,6 +14,10 @@ GGTOOLS can be installed with the following two steps
 1. `conda install cartopy netcdf4 h5py`
 2. `pip install ggtools`
 
+## How to Upgrade
+
+GGTOOLS can be upgraded to the latest version with `pip install ggtools --upgrade`. 
+
 ## How to use
 
 ## GRACE
