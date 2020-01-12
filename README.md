@@ -11,7 +11,7 @@ handle the GRACE(Gravity Recovery and Climate Experiment) and GRACE-FO(Follow-on
 
 GGTOOLS can be installed with the following two steps
 
-1. `conda install cartopy h5py`
+1. `conda install cartopy netcdf4 h5py`
 2. `pip install ggtools`
 
 ## How to use
