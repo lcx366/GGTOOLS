@@ -23,7 +23,6 @@ setup(
         'scipy',
         'numpy',
         'matplotlib',
-        'netcdf4',
         'pyshtools',
         'GPy',
         'xarray',
