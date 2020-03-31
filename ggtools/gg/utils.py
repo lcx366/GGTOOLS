@@ -284,15 +284,18 @@ def generate_nodes(grids,points,research_boundary,mode=None):
     elif mode == 'polygon':
         if points.ndim == 3:
             for p in points:
-                layer = layer | Curve2Mask(nlat,p, 0, sampling = 2)  
+                north_pole = create_polygon(p).contains_points([90,0]) # Determine if the North Pole is inside a polygon
+                layer = layer | Curve2Mask(nlat,p, north_pole, sampling = 2)  
         elif points.ndim == 2:
-            layer = Curve2Mask(nlat,points, 0, sampling = 2)
+            north_pole = create_polygon(points).contains_points([90,0]) # Determine if the North Pole is inside a polygon
+            layer = Curve2Mask(nlat,points, north_pole, sampling = 2)
         else:
             raise Exception('dimension of polygon should be 2 and polygons should be 3')       
     else:
         raise Exception('only polygon and polygons are avaliable') 
-        
-    layer = layer & Curve2Mask(nlat,research_boundary, 0, sampling = 2)    
+
+    north_pole = create_polygon(research_boundary).contains_points([90,0]) # Determine if the North Pole is inside the research area    
+    layer = layer & Curve2Mask(nlat,research_boundary, north_pole, sampling = 2)    
             
     lat_index,lon_index = np.where(layer)
     

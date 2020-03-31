@@ -5,6 +5,8 @@ from pyshtools.expand import spharm,SHExpandDH
 from pyshtools.spectralanalysis import Curve2Mask
 from pyshtools.shio import read_icgem_gfc
 
+from sphericalpolygon import create_polygon
+
 from ..gg.static_models import static_download
 from ..gg.lovenums import lovenums
 from ..gg.utils import month2int,crop_region
@@ -528,7 +530,7 @@ class GSM(object):
         
         return Grid(info,grids_region,grids_std_region,lons_region,lats_region,lons_flag,lats_flag)
     
-    def study_area(self,points,north_pole=False,central_meridian=False):
+    def study_area(self,points):
         
         a = float(self.mean_equator_radius.partition('m')[0])/1e3 # km
         
@@ -540,8 +542,8 @@ class GSM(object):
             rho = 1442
        
         qs,qs_std = [],[]
-
-        mask_grid = Curve2Mask(2*(self.degree_order+1),points,north_pole,sampling=2,centralmeridian=central_meridian)
+        north_pole = create_polygon(points).contains_points([90,0]) # Determine if the North Pole is inside the study area
+        mask_grid = Curve2Mask(2*(self.degree_order+1),points,north_pole,sampling=2)
         mask_shc = SHExpandDH(mask_grid,sampling=2)
         
         area = mask_shc[0,0,0]*4*np.pi*a**2 # km^2
