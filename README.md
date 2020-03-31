@@ -825,7 +825,7 @@ Two ways are listed to set the study area. one is to provide a boundary file, an
 
 #### Method 1: through a boundary file
 
-Make sure the boundary file exists in the current directory. The first and second columns of the boundary file are latitude and longitude, respectively. Currently, boundary files that go across the prime meridian are temporarily unsupported.
+Make sure the boundary file exists in the current directory. The first and second columns of the boundary file are latitude and longitude, respectively. 
 
 
 ```python
@@ -929,7 +929,7 @@ gsm_r_ddk5_sma_grid_rate.plot(fig_name2,ylabel,polygons=study_area)
 ```
 
     The calculation will take a few minutes, please be patient.
-   
+
 <p align="middle">
   <img src="readme_figures/output_105_1.png" width="400" />
   <img src="readme_figures/output_105_2.png" width="400" />
@@ -1553,12 +1553,17 @@ gsm_twsc_series.plot(fig_name,ylabel,kernel='rbf')
 <p align="middle">
 <img src="readme_figures/output_200_1.png" width="500" />
 </p>
+## Change log
+- **1.1.6 — Mar 31,  2020**
+  - Fixed the issue that the boundary file(defines the study area) goes across the prime meridian. From now on, boundary files that go across the prime meridian are supported.
 
 ## Next release
 
  - Complete the help documentation
 
  - Improve the code structure to make it easier to read
+
+ - Add the degree and order (d/o) one(Geocenter) correction
 
  - Add outliers elimination in Gaussian Process Regression(GPR)
 
@@ -1567,8 +1572,6 @@ gsm_twsc_series.plot(fig_name,ylabel,kernel='rbf')
  - Add other destriping filters, such as P4M6
 
  - Add other map projections, such as AlbersEqualArea
-
- - Fix the issue that the boundary file goes across the prime meridian
 
  - Find a way to quickly calculate the uncertainty of the grid data
 
