@@ -1553,8 +1553,11 @@ gsm_twsc_series.plot(fig_name,ylabel,kernel='rbf')
 <p align="middle">
 <img src="readme_figures/output_200_1.png" width="500" />
 </p>
+
 ## Change log
+
 - **1.1.6 — Mar 31,  2020**
+
   - Fixed the issue that the boundary file(defines the study area) goes across the prime meridian. From now on, boundary files that go across the prime meridian are supported.
 
 ## Next release
