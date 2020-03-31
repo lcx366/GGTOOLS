@@ -6,6 +6,8 @@ from pyshtools.expand import SHExpandDH,MakeGridDH
 from pyshtools.spectralanalysis import SlepianCoeffsToSH,Curve2Mask
 from pyshtools.shio import SHCilmToVector
 
+from sphericalpolygon import create_polygon
+
 from .filter import filter_gaussian
 from .lcurve import L_curve
 
@@ -123,8 +125,8 @@ def space_domain(grids,nodes,research_boundary,r):
     
         psf_grids_gau.append(psf_grid_gau)  
     psf_grids_gau = np.array(psf_grids_gau)  
-
-    mask_boundary = Curve2Mask(nlat, research_boundary, 0, sampling = 2)
+    north_pole = create_polygon(research_boundary).contains_points([90,0]) # Determine if the North Pole is inside the study area
+    mask_boundary = Curve2Mask(nlat, research_boundary, north_pole, sampling = 2)
     psf_grids_simply = psf_grids_gau[:,mask_boundary.astype(bool)]
     
     if grids.region != 'globe':
@@ -185,7 +187,8 @@ def spectral_domain(shcs,nodes,research_boundary,r,mode=None,ratio=None):
             lamb,ma = L_curve(A,y)
             mas.append(ma)
     else:
-        mask_boundary = Curve2Mask(nlat, research_boundary, 0, sampling = 2)
+        north_pole = create_polygon(research_boundary).contains_points([90,0]) # Determine if the North Pole is inside the study area
+        mask_boundary = Curve2Mask(nlat, research_boundary, north_pole, sampling = 2)
 
         # estimate the Shannon number
         N = np.ceil((lmax+1)**2*ratio) # Rough Shannon number
