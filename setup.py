@@ -23,7 +23,7 @@ setup(
         'scipy',
         'numpy',
         'matplotlib',
-        'pyshtools',
+        'pyshtools>=4.6.2',
         'GPy',
         'xarray',
         'requests',
