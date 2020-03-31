@@ -2,7 +2,7 @@ from os import path,makedirs
 import numpy as np
 
 from pyshtools.spectralanalysis import Curve2Mask
-
+from sphericalpolygon import create_polygon
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
@@ -166,7 +166,7 @@ class Grid(object):
 
         return Grid(info,np.array([grids_rate]),np.array([grids_rate_std]),lons,lats,self.lons_flag,self.lats_flag)
     
-    def study_area(self,points,north_pole=False,central_meridian=False):
+    def study_area(self,points):
         
         lats = self.lats
         lons_flag,lats_flag = self.lons_flag,self.lats_flag
@@ -181,8 +181,8 @@ class Grid(object):
         
         lat_step = lats[1] - lats[0]
         qs,qs_std = [],[]
-
-        mask = Curve2Mask(2*(self.degree_order+1),points,north_pole,sampling=2,centralmeridian=central_meridian)
+        north_pole = create_polygon(points).contains_points([90,0]) # Determine if the North Pole is inside the study area
+        mask = Curve2Mask(2*(self.degree_order+1),points,north_pole,sampling=2)
         mask_region = mask[lats_flag,:][:,lons_flag]
         
         grid_area = (np.deg2rad(lat_step)*a)**2 # km^2

@@ -530,7 +530,7 @@ class GSM(object):
         
         return Grid(info,grids_region,grids_std_region,lons_region,lats_region,lons_flag,lats_flag)
     
-    def study_area(self,points,central_meridian=False):
+    def study_area(self,points):
         
         a = float(self.mean_equator_radius.partition('m')[0])/1e3 # km
         
