@@ -222,7 +222,7 @@ def gsm_download(source,D = 60,start_date = None,end_date = None,RL = 'RL06'):
                 except:
                     local_file.close()
                     remove(gsm_file)
-            if idownload == 2: raise Exception('Server did not respond, file download failed')        
+                    if idownload == 2: raise Exception('Server did not respond, file download failed')        
 
             g_file = GzipFile(gsm_file)
                 

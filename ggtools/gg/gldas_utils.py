@@ -86,7 +86,7 @@ def gldas_download(uid,passwd,start_date,end_date,res = '1deg',source = 'NOAH'):
                 except:
                     local_file.close()
                     remove(dir_gldas_to+'/'+gldas_file) 
-            if idownload == 2: raise Exception('Server did not respond, file download failed')        
+                    if idownload == 2: raise Exception('Server did not respond, file download failed')        
     
     # Download the documentation
     readme_file = 'README_GLDAS2.pdf'
