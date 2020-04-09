@@ -3,6 +3,7 @@ import xarray as xr
 
 from os import getenv,path,makedirs,walk,remove
 import requests
+import time as pytime
 
 from .utils import print_error_gldas
 from ..ggclasses.class_GLDAS import GLDAS
@@ -87,6 +88,7 @@ def gldas_download(uid,passwd,start_date,end_date,res = '1deg',source = 'NOAH'):
                     local_file.close()
                     remove(dir_gldas_to+'/'+gldas_file) 
                     if idownload == 2: raise Exception('Server did not respond, file download failed')        
+                    pytime.sleep(20)
     
     # Download the documentation
     readme_file = 'README_GLDAS2.pdf'

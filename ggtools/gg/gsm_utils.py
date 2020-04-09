@@ -3,6 +3,7 @@ from os import path,remove,walk,makedirs
 from ftplib import FTP
 from datetime import date,timedelta
 from gzip import GzipFile
+import time as pytime
 
 from .utils import print_error_grace
 from ..ggclasses.class_GSM import GSM
@@ -222,7 +223,8 @@ def gsm_download(source,D = 60,start_date = None,end_date = None,RL = 'RL06'):
                 except:
                     local_file.close()
                     remove(gsm_file)
-                    if idownload == 2: raise Exception('Server did not respond, file download failed')        
+                    if idownload == 2: raise Exception('Server did not respond, file download failed')
+                    pytime.sleep(20)        
 
             g_file = GzipFile(gsm_file)
                 
