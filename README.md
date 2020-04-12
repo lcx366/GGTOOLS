@@ -3,10 +3,6 @@
 The ggtools package is an archive of scientific routines that can be used to
 handle the GRACE(Gravity Recovery and Climate Experiment) and GRACE-FO(Follow-on) GSM data(RL06 Level-2 monthly solutions) and GLDAS grid data.
 
-## Table of Contents
-
-[toc]
-
 ## How to Install 
 
 GGTOOLS can be installed with the following two steps
@@ -1556,6 +1552,10 @@ gsm_twsc_series.plot(fig_name,ylabel,kernel='rbf')
 
 ## Change log
 
+- **1.1.7 — Apr 12,  2020**
+
+  - Fixed the issue that it fails to download GLDAS data under windows platform.
+  
 - **1.1.6 — Mar 31,  2020**
 
   - Fixed the issue that the boundary file(defines the study area) goes across the prime meridian. From now on, boundary files that pass through the prime meridian are supported.
