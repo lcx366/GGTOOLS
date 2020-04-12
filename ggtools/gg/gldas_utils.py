@@ -1,7 +1,8 @@
 import numpy as np
 import xarray as xr
 
-from os import getenv,path,makedirs,walk,remove
+from os import path,makedirs,walk,remove
+from pathlib import Path
 import requests
 import time as pytime
 
@@ -50,7 +51,7 @@ def gldas_download(uid,passwd,start_date,end_date,res = '1deg',source = 'NOAH'):
     val_res,dir_res = print_error_gldas(source, res)
         
     # Create a .netrc file in the home directory
-    home = getenv('HOME')
+    home = str(Path.home())
     if not path.exists(home+'/.netrc'):
         netrc_file = open(home+'/.netrc','w')
         netrc_file.write('machine urs.earthdata.nasa.gov login '+uid+' password '+passwd)
