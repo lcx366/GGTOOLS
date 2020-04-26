@@ -16,14 +16,14 @@ def lsm(lons,lats,data,q='twsc',mode='classic'):
     Inputs:
     lats -> [float array] latitudes of gldas grid data
     lons -> [float array] longitudes of gldas grid data
-    data -> [float 2d array] gldas grids data
+    data -> [list] gldas grids data
 
     Parameters:
     q -> [optional, str, default = 'twsc'] land surface quantities to be calculated from GLDAS grid data. Currently, only TWSC is avaliable.
     mode -> [optional, str, default = 'classic'] Method to eatimate TWSC. Avaliable options are 'classic' and 'wbe'. If 'classic', TWSC = SoilMoi + Accum_Snow + Canopy. If 'wbe', TWSC = precipitation - water_evaporation - surface_runoff - subsurface_runoff.
     
     Outputs:
-    twsc -> [float 2d array] TWSC grids 
+    twscs_deaverage -> [float 3d array] Deaveraged TWSC grids 
     '''
     info = {}
     info['normalization'] = 'fully normalized'
