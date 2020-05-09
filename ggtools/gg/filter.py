@@ -1,5 +1,6 @@
 import numpy as np
-from os import getenv,path,makedirs
+from os import path,makedirs
+from pathlib import Path
 from urllib.request import urlretrieve
 from time import sleep
 
@@ -35,25 +36,36 @@ def filter_ddk(filter_type,shc,shc_std=None):
     filter_shc_std = np.zeros_like(shc_std)
 
     # Download the DDK filter matrices
-    home = getenv('HOME')
+    home = str(Path.home())
     direc = home + '/src/ddk-data/'
-    ddk_types = ['1d14','1d13','1d12','5d11','1d11','5d10','1d10','5d9']   
+    ddk_types = {'DDK1':'1d14','DDK2':'1d13','DDK3':'1d12','DDK4':'5d11','DDK5':'1d11',\
+    'DDK6':'5d10','DDK7':'1d10','DDK8':'5d9',}
+    # {'DDK9':'1e9','DDK10':'2.5e8','DDK11':'1e8'} for DDKexperimental
+
     urldir = 'https://raw.githubusercontent.com/strawpants/GRACE-filter/master/data/DDK/'
+
+    ddk_bin = 'Wbd_2-120.a_' + ddk_types[filter_type] + 'p_4'
     
-    if not path.exists(direc): 
-        makedirs(direc)
-        for ddk_type in ddk_types:
-            ddk_bin = 'Wbd_2-120.a_' + ddk_type + 'p_4'
-            url = urldir + ddk_bin
-            for idownload in range(3):
-                print('Downloading the DDK filter matrix ... ' + ddk_bin,end=' ... ')
-                try: 
-                    urlretrieve(url, direc + ddk_bin)
-                    print('Transfer completed')
-                    break
-                except:
+    if not path.exists(direc_to): makedirs(direc_to)
+    if not path.exists(direc_to + ddk_bin):
+
+        url = urldir + ddk_bin
+        for idownload in range(3):
+            print('Downloading the DDK filter matrix ... ' + ddk_bin,end=' ... ')
+            try: 
+                urlretrieve(url, direc_to + ddk_bin)
+                print('Transfer completed')
+                break
+            except:
+                if idownload < 2:
                     print('Transfer failed, try downloading again.') 
-                sleep(30)  # Pause for 30 seconds     
+                    pytime.sleep(20)  # Pause for 20 seconds  
+                else:
+                    print('from an alternative source',end=' ... ')
+                    urldir_alter = 'http://www.shareresearch.me/wp-content/uploads/2020/05/'
+                    url = urldir_alter + ddk_bin
+                    urlretrieve(url, direc_to + ddk_bin)
+                    print('Transfer completed')   
 
     # read the filter matrix
 

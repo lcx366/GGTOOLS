@@ -2,10 +2,10 @@
 ggtools package
 
 This package is an archive of scientific routines that can be used to
-handle the GRACE and GLDAS data. 
+handle the GRACE and GLDAS products. 
 
 Class structure:
-    GSM
+    SHM
     Grid
     Series  
     SLR_C20  

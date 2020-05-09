@@ -5,7 +5,7 @@ This subpackage defines some classes that facilitates the processing of GRACE le
 
 Class structure:
 
-    GSM
+    SHM
 
     TWSC
 

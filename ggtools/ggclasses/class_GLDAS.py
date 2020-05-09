@@ -5,7 +5,7 @@ from ..gg.lsm import lsm
 from ..gg.utils import crop_region
 
 from .class_Grid import Grid
-from .class_GSM import GSM
+from .class_SHM import SHM
 
 class GLDAS(object):
     '''

@@ -71,8 +71,8 @@ def ddk_gaussian(filter_type,D,visible = None):
         fig_dir = 'figures/'
         if not path.exists(fig_dir): makedirs(fig_dir) 
 
-        cap_at_northpole_grids_ddk = MakeGridDH(filt_SHC_ddk,sampling=2)
-        cap_at_northpole_grids_gau = MakeGridDH(filt_SHC_gau,sampling=2)
+        cap_at_northpole_grids_ddk = MakeGridDH(filt_SHC_ddk,sampling=2,extend=True)
+        cap_at_northpole_grids_gau = MakeGridDH(filt_SHC_gau,sampling=2,extend=True)
         
         lons,lats = cap_at_northpole_grids_class.lons(),cap_at_northpole_grids_class.lats()
         fig_name = 'raw_ddk_gau.png'

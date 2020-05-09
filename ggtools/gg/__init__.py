@@ -113,7 +113,7 @@ latlon2yx - Transform latitudes and longitudes to index.
 
 generate_mascons - Create mascons within a study area using a set of points or polygons.
 '''  
-from .gsm_utils import print_gsm_date_coverage,gsm_download,read_gsm,gsm_average
+from .gsm_utils import print_pid_date_coverage,pid_download,read_pid,pid_average
 from .static_models import static_download
 from .slr_utils import slr_c20_download,read_slr_c20
 from .gldas_utils import gldas_download,read_gldas

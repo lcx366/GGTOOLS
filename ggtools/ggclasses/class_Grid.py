@@ -65,43 +65,21 @@ class Grid(object):
     def __init__(self,info,grids,grids_std,lons,lats,lons_flag,lats_flag):
         
         self.info = info
-        self.degree_order = info['degree_order']
-        self.max_degree = info['max_degree']
-        self.max_order = info['max_order'] 
-        self.normalization = info['normalization'] 
-        self.permanent_tide = info['permanent_tide'] 
-        self.earth_gravity_param = info['earth_gravity_param']
-        self.mean_equator_radius = info['mean_equator_radius']
-        self.background_gravity = info['background_gravity']
-        self.title = info['title']
-        self.summary = info['summary']
-        self.institution = info['institution']
-        self.processing_level = info['processing_level']
-        self.product_version = info['product_version']
-        self.time_coverage_start = info['time_coverage_start']
-        self.time_coverage_end = info['time_coverage_end']
-        self.total_month = info['total_month']
-        self.total_month_counts = info['total_month_counts'] 
-        self.solution_counts = info['solution_counts'] 
-        self.solution_month = info['solution_month'] 
-        self.missing_month = info['missing_month']
-        self.missing_month_counts = info['missing_month_counts']
-        self.missing_solution_flag = info['missing_solution_flag']
-        self.unused_days = info['unused_days']
-        self.date_issued = info['date_issued']
-        self.equi_material = info['equi_material']
-        self.filter = info['filter']
-        self.region = info['region']
+
+        for key in info.keys():
+            setattr(self, key, info[key])
         
         self.grids,self.grids_std = grids,grids_std
         self.lons,self.lats = lons,lats
         self.lons_flag,self.lats_flag = lons_flag,lats_flag
         
     def __repr__(self):
-    
-        return 'title = {:s}\ntime_coverage_start = {:s}\ntime_coverage_end = {:s}\nsolution_counts = {:d}\ntotal_month_counts = {:d}\nmissing_month_counts = {:d}\nequi_material = {:s}\nregion = {:s}'.format\
-        (self.title,self.time_coverage_start,self.time_coverage_end,self.solution_counts,self.total_month_counts,self.missing_month_counts,self.equi_material,str(self.region))
-    
+
+        outkeys = ['title','product_id','institution','equi_material','region','date_coverage_start','date_coverage_end','solution_counts','total_month_counts','missing_month_counts','comment','nlats','nlons']
+        for key in outkeys:
+            print(key + ' = ', getattr(self,key))
+        return 'Instance of class Grid'  
+        
     def rate(self,mode='ILSQM'):
         '''
         Estimate the annual change rate of grids for Surface Mass Anomaly in Equivalent Water(or Ice, Sand) Thickness(EWT) using the linearly fitting method.
@@ -182,7 +160,7 @@ class Grid(object):
         lat_step = lats[1] - lats[0]
         qs,qs_std = [],[]
         north_pole = create_polygon(points).contains_points([90,0]) # Determine if the North Pole is inside the study area
-        mask = Curve2Mask(2*(self.degree_order+1),points,north_pole,sampling=2)
+        mask = Curve2Mask(2*(self.degree_order+1),points,north_pole,sampling=2,extend=True)
         mask_region = mask[lats_flag,:][:,lons_flag]
         
         grid_area = (np.deg2rad(lat_step)*a)**2 # km^2

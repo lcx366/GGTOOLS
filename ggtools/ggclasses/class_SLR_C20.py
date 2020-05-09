@@ -31,33 +31,21 @@ class SLR_C20(object):
     '''
     def __init__(self,info,c20,c20_demean,c20_std):
         self.info = info
-        self.normalization = info['normalization'] 
-        self.background_gravity = info['background_gravity']
-        self.title = info['title']
-        self.summary = info['summary']
-        self.institution = info['institution']
-        self.product_version = info['product_version']
-        self.time_coverage_start = info['time_coverage_start']
-        self.time_coverage_end = info['time_coverage_end']
-        self.total_month = info['total_month']
-        self.total_month_counts = info['total_month_counts'] 
-        self.solution_month = info['solution_month']
-        self.solution_counts = info['solution_counts'] 
-        self.missing_month = info['missing_month']
-        self.missing_month_counts = info['missing_month_counts']
-        self.missing_solution_flag = info['missing_solution_flag']
-        self.date_issued = info['date_issued']
-        self.mean_c20 = info['mean_c20']
+
+        for key in info.keys():
+            setattr(self, key, info[key]) 
         
         self.c20 = c20
         self.c20_demean = c20_demean
         self.c20_std = c20_std
         
     def __repr__(self):
-    
-        return 'title = {:s}\nnormalization = {:s}\ninstitution = {:s}\nproduct_version = {:s}\ntime_coverage_start = {:s}\ntime_coverage_end = {:s}\nsolution_counts = {:d}\ntotal_month_counts = {:d}\nmissing_month_counts = {:d}'.format\
-        (self.title,self.normalization,self.institution,self.product_version,self.time_coverage_start,self.time_coverage_end,self.solution_counts,self.total_month_counts,self.missing_month_counts)
-        
+
+        outkeys = ['title','normalization','institution','product_version','time_coverage_start','time_coverage_end','solution_counts','total_month_counts','missing_month_counts']
+        for key in outkeys:
+            print(key + ' = ', getattr(self,key))
+        return 'Instance of class SLR_C20'  
+
     def deaverage(self):
         
         '''
@@ -83,18 +71,13 @@ class SLR_C20(object):
          -6.21788085e-11, -2.70057085e-11, -4.02519085e-11,  1.70110915e-11,
           2.92669150e-12, -4.49227085e-11, -1.89951408e-10, -1.86842409e-10]
         '''
+        c20_deaverage = self.c20 - np.average(self.c20)
+
         info = self.info.copy()
-
-        background_mean = np.average(self.c20)
-
-        info['background_gravity'] = 'Average of monthly solutions'   
-        info['mean_c20'] = background_mean
-        c20_deaverage = self.c20 - background_mean
-        c20_demean = c20_deaverage
         
         info['title'] = 'Deaveraged ' + info['title']
         
-        return SLR_C20(info,c20_deaverage,c20_demean,self.c20_std)
+        return SLR_C20(info,c20_deaverage,self.c20_demean,self.c20_std)
 
     def __add__(self,other):
 

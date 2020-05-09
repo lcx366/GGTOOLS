@@ -5,7 +5,7 @@ from pyshtools.spectralanalysis import Curve2Mask
 from ..ggclasses.class_Nodes import Nodes
         
 
-def print_error_grace(source, D, RL):
+def print_error_grace(source, pid, level, RL):
     '''
     If source, D, and RL do not meet the input requirements, an error message will be printed.
     
@@ -28,13 +28,16 @@ def print_error_grace(source, D, RL):
     Exception: Currently, only release RL06 is feasible
     '''
     if source not in ['CSR','GFZ','JPL']:
-        raise Exception('Currently, only data from institutions such as CSR, GFZ, and JPL are feasible')
+        raise Exception('Currently, only data from CSR, GFZ, and JPL are feasible.')
         
-    if D not in [60,96]:
-        raise ValueError('Degree should be either 60 or 96')  
+    if pid not in ['GSM60','GSM96','GAA','GAB','GAC','GAD']:
+        raise Exception("Unknown GRACE product identifier. It should be one of 'GSM60', 'GSM96', 'GAA', 'GAB', GAC', and 'GAD'.")  
+
+    if level != 'Level-2':
+        raise Exception('Currently, only Level-2 products are supported.')  
         
     if RL != 'RL06':
-        raise Exception('Currently, only release RL06 is feasible')
+        raise Exception('Currently, only release RL06 is feasible.')
     
     return None
 
@@ -285,17 +288,17 @@ def generate_nodes(grids,points,research_boundary,mode=None):
         if points.ndim == 3:
             for p in points:
                 north_pole = create_polygon(p).contains_points([90,0]) # Determine if the North Pole is inside a polygon
-                layer = layer | Curve2Mask(nlat,p, north_pole, sampling = 2)  
+                layer = layer | Curve2Mask(nlat,p, north_pole, sampling = 2,extend=True)  
         elif points.ndim == 2:
             north_pole = create_polygon(points).contains_points([90,0]) # Determine if the North Pole is inside a polygon
-            layer = Curve2Mask(nlat,points, north_pole, sampling = 2)
+            layer = Curve2Mask(nlat,points, north_pole, sampling = 2,extend=True)
         else:
             raise Exception('dimension of polygon should be 2 and polygons should be 3')       
     else:
         raise Exception('only polygon and polygons are avaliable') 
 
     north_pole = create_polygon(research_boundary).contains_points([90,0]) # Determine if the North Pole is inside the research area    
-    layer = layer & Curve2Mask(nlat,research_boundary, north_pole, sampling = 2)    
+    layer = layer & Curve2Mask(nlat,research_boundary, north_pole, sampling = 2,extend=True)    
             
     lat_index,lon_index = np.where(layer)
     

@@ -52,7 +52,7 @@ def forward_model_initial(FM0_grid,r):
     # set deg 0 and deg 1 to zero
     FM0_shc[:,:2,:] = 0
     FM0_shc_gau = filter_gaussian(r,FM0_shc)
-    FM0_grid_gau = MakeGridDH(FM0_shc_gau,sampling=2)
+    FM0_grid_gau = MakeGridDH(FM0_shc_gau,sampling=2,extend=True)
     return FM0_grid_gau
 
 def forward_model(FM0_grids,r,amplify_factor = 1.2):
@@ -121,12 +121,12 @@ def space_domain(grids,nodes,research_boundary,r):
 
         psf_shc = SHExpandDH(psf_grid,sampling=2) 
         psf_shc_gau = filter_gaussian(r,psf_shc)
-        psf_grid_gau = MakeGridDH(psf_shc_gau,sampling=2)
+        psf_grid_gau = MakeGridDH(psf_shc_gau,sampling=2,extend=True)
     
         psf_grids_gau.append(psf_grid_gau)  
     psf_grids_gau = np.array(psf_grids_gau)  
     north_pole = create_polygon(research_boundary).contains_points([90,0]) # Determine if the North Pole is inside the study area
-    mask_boundary = Curve2Mask(nlat, research_boundary, north_pole, sampling = 2)
+    mask_boundary = Curve2Mask(nlat, research_boundary, north_pole, sampling = 2,extend=True)
     psf_grids_simply = psf_grids_gau[:,mask_boundary.astype(bool)]
     
     if grids.region != 'globe':
@@ -188,7 +188,7 @@ def spectral_domain(shcs,nodes,research_boundary,r,mode=None,ratio=None):
             mas.append(ma)
     else:
         north_pole = create_polygon(research_boundary).contains_points([90,0]) # Determine if the North Pole is inside the study area
-        mask_boundary = Curve2Mask(nlat, research_boundary, north_pole, sampling = 2)
+        mask_boundary = Curve2Mask(nlat, research_boundary, north_pole, sampling = 2, extend=True)
 
         # estimate the Shannon number
         N = np.ceil((lmax+1)**2*ratio) # Rough Shannon number

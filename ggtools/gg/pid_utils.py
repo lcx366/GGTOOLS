@@ -2,13 +2,14 @@ import numpy as np
 from os import path,remove,walk,makedirs
 from ftplib import FTP
 from datetime import date,timedelta
+from astropy.time import Time
 from gzip import GzipFile
 import time as pytime
 
 from .utils import print_error_grace
-from ..ggclasses.class_GSM import GSM
+from ..ggclasses.class_SHM import SHM
 
-def parse_gsm_filename(gsm_filename):
+def parse_pid_filename(pid_filename):
     '''
     Parse GRACE GSM filenames.
     
@@ -27,8 +28,8 @@ def parse_gsm_filename(gsm_filename):
     {'start': {'year': '2009', 'month': '03', 'day': '01'}, 'end': {'year': '2009', 'month': '03', 'day': '31'}}
     '''
     # Convert [year, day of year] to [year, month, day]
-    start_year,start_doy = int(gsm_filename[6:10]),int(gsm_filename[10:13])
-    end_year,end_doy = int(gsm_filename[14:18]),int(gsm_filename[18:21])
+    start_year,start_doy = int(pid_filename[6:10]),int(pid_filename[10:13])
+    end_year,end_doy = int(pid_filename[14:18]),int(pid_filename[18:21])
     
     start_date = date(start_year, 1,1) + timedelta(days=start_doy-1)
     start_year = start_date.strftime('%Y')
@@ -43,7 +44,7 @@ def parse_gsm_filename(gsm_filename):
     return {'start':{'year':start_year,'month':start_month,'day':start_day},\
             'end':{'year':end_year,'month':end_month,'day':end_day}} 
     
-def print_gsm_date_coverage(source, D = 60, RL = 'RL06'):
+def print_pid_date_coverage(source, pid, level='Level-2', RL = 'RL06'):
     '''
     Print the date coverage for the GRACE GSM data from isdcftp.gfz-potsdam.de
     
@@ -69,17 +70,17 @@ def print_gsm_date_coverage(source, D = 60, RL = 'RL06'):
     >>> print_gsm_date_coverage('JPL', 96)
     GSM data for JPL_RL06_96 is available from 2002-04-04 to 2017-06-29
     '''
-    print_error_grace(source, D, RL) 
+    print_error_grace(source, pid, level, RL) 
     
     server = 'isdcftp.gfz-potsdam.de'
     ftp = FTP(server) 
     ftp.login() 
-    dir_gsm_from1 = 'grace//Level-2/' + source + '/' + RL
-    ftp.cwd(dir_gsm_from1)
+    dir_pid_from1 = '~/grace//' + level + '/' + source + '/' + RL
+    ftp.cwd(dir_pid_from1)
     files_list1 = ftp.nlst()
     
-    dir_gsm_from2 = '~/grace-fo/Level-2/' + source + '/' + RL
-    ftp.cwd(dir_gsm_from2)
+    dir_pid_from2 = '~/grace-fo/' + level + '/' + source + '/' + RL
+    ftp.cwd(dir_pid_from2)
     files_list2 = ftp.nlst()
     
     files_list = files_list1 + files_list2
@@ -87,24 +88,31 @@ def print_gsm_date_coverage(source, D = 60, RL = 'RL06'):
     ftp.quit()
     ftp.close()
     
-    if D is 60:
-        gsm_filenames = np.sort([s for s in files_list if 'GSM' in s and 'BA01' in s])
-    if D is 96:
-        gsm_filenames = np.sort([s for s in files_list if 'GSM' in s and 'BB01' in s])
-        
-    gsm_date = parse_gsm_filename(gsm_filenames[0])   
-    start_year = gsm_date['start']['year']
-    start_month = gsm_date['start']['month']
-    start_day = gsm_date['start']['day']
+    if pid == 'GSM60':
+        pid_filenames = np.sort([s for s in files_list if 'GSM' in s and 'BA01' in s])
+    elif pid == 'GSM96':
+        pid_filenames = np.sort([s for s in files_list if 'GSM' in s and 'BB01' in s])
+    elif pid in ['GAA','GAB','GAC','GAD']:
+        pid_filenames = np.sort([s for s in files_list if pid in s and 'BC01' in s])
+    else:
+        raise Exception("Unknown GRACE product identifier. It should be one of 'GSM60', 'GSM96', 'GAA', 'GAB', GAC', and 'GAD'.")   
+
+    if len(pid_filenames) == 0:
+        raise FileNotFoundError('GRACE {:s} {:s} {:s} data from {:s} do not exist. Maybe you should try other types of GRACE products.'.format(level, RL, pid, source))
+          
+    pid_date = parse_pid_filename(pid_filenames[0])   
+    start_year = pid_date['start']['year']
+    start_month = pid_date['start']['month']
+    start_day = pid_date['start']['day']
     
-    gsm_date = parse_gsm_filename(gsm_filenames[-1])
-    end_year = gsm_date['end']['year']
-    end_month = gsm_date['end']['month']
-    end_day = gsm_date['end']['day']
+    gsm_date = parse_pid_filename(pid_filenames[-1])
+    end_year = pid_date['end']['year']
+    end_month = pid_date['end']['month']
+    end_day = pid_date['end']['day']
     
-    print('GSM data for {:s}_{:s}_{:d} is available from {:s}-{:s}-{:s} to {:s}-{:s}-{:s}'.format(source,RL,D,start_year,start_month,start_day,end_year,end_month,end_day))
+    print('GRACE {:s} {:s} {:s} data from {:s} are available from {:s}-{:s}-{:s} to {:s}-{:s}-{:s}'.format(level, RL, pid, source,start_year,start_month,start_day,end_year,end_month,end_day))
     
-def gsm_download(source,D = 60,start_date = None,end_date = None,RL = 'RL06'): 
+def pid_download(source,pid,start_date = None,end_date = None,level='Level-2',RL = 'RL06'): 
     '''
     Download GRACE GSM data from isdcftp.gfz-potsdam.de; if the file to be downloaded is already included in the download directory, the download is automatically skipped.
     
@@ -135,41 +143,48 @@ def gsm_download(source,D = 60,start_date = None,end_date = None,RL = 'RL06'):
     >>> gsm_download('GFZ', 96,'2007-02')
     >>> gsm_download('GFZ', 60,end_date = '2015-11')
     '''
-    print_error_grace(source, D, RL)
+    print_error_grace(source, pid, level, RL)
         
     server = 'isdcftp.gfz-potsdam.de'
     ftp = FTP(server) 
     ftp.login()
-    dir_gsm_from1 = '~/grace//Level-2/' + source + '/' + RL + '/'
-    ftp.cwd(dir_gsm_from1)
+    dir_pid_from1 = '~/grace//' + level + '/' + source + '/' + RL + '/'
+    ftp.cwd(dir_pid_from1)
     files_list1 = ftp.nlst()
     
-    dir_gsm_from2 = '~/grace-fo/Level-2/' + source + '/' + RL + '/'
-    ftp.cwd(dir_gsm_from2)
+    dir_pid_from2 = '~/grace-fo/' + level + '/' + source + '/' + RL + '/'
+    ftp.cwd(dir_pid_from2)
     files_list2 = ftp.nlst()
     files_list = files_list1 + files_list2
-
-    ftp.cwd('~/')
     
-    if D is 60:
-        gsm_filenames = np.sort([s for s in files_list if 'GSM' in s and 'BA01' in s])
-    if D is 96:
-        gsm_filenames = np.sort([s for s in files_list if 'GSM' in s and 'BB01' in s]) 
+    if pid == 'GSM60':
+        pid_filenames = np.sort([s for s in files_list if 'GSM' in s and 'BA01' in s])
+    elif pid == 'GSM96':
+        pid_filenames = np.sort([s for s in files_list if 'GSM' in s and 'BB01' in s])
+    elif pid in ['GAA','GAB','GAC','GAD']:
+        pid_filenames = np.sort([s for s in files_list if pid in s and 'BC01' in s])
+    else:
+        raise Exception("Unknown GRACE product identifier. It should be one of 'GSM60', 'GSM96', 'GAA', 'GAB', GAC', and 'GAD'.")   
+
+    if len(pid_filenames) == 0:
+        raise FileNotFoundError('GRACE {:s} {:s} {:s} data from {:s} do not exist. Maybe you should try other types of GRACE products.'.format(level, RL, pid, source)) 
+
+    dir_pid_to = 'GRACE/' + level + '/' + source + '/' + RL + '/' + pid           
     
     if start_date is None:
-        gsm_date = parse_gsm_filename(gsm_filenames[0])
-        start_year = gsm_date['start']['year']
-        start_month = gsm_date['start']['month']
-        start_day = gsm_date['start']['day']
+        pid_date = parse_pid_filename(pid_filenames[0])
+        start_year = pid_date['start']['year']
+        start_month = pid_date['start']['month']
+        start_day = pid_date['start']['day']
         start_date = date(int(start_year), int(start_month),int(start_day))
     else:
         start_date = date(int(start_date[:4]), int(start_date[5:7]),1)
         
     if end_date is None:
-        gsm_date = parse_gsm_filename(gsm_filenames[-1])
-        end_year = gsm_date['end']['year']
-        end_month = gsm_date['end']['month']
-        end_day = gsm_date['end']['day']
+        pid_date = parse_pud_filename(pid_filenames[-1])
+        end_year = pid_date['end']['year']
+        end_month = pid_date['end']['month']
+        end_day = pid_date['end']['day']
         end_date = date(int(end_year), int(end_month),int(end_day))
 
     else:
@@ -178,65 +193,64 @@ def gsm_download(source,D = 60,start_date = None,end_date = None,RL = 'RL06'):
         else:
             end_date = date(int(end_date[:4]), int(end_date[5:7])+1,1) - timedelta(days=1)
     
-    gsm_filenames_bydate = []
-    for gsm_filename in gsm_filenames:
-        gsm_date = parse_gsm_filename(gsm_filename) 
+    pid_filenames_bydate = []
+
+    for pid_filename in pid_filenames:
+        pid_date = parse_pid_filename(pid_filename) 
         
-        gsm_start_year = gsm_date['start']['year']
-        gsm_start_month = gsm_date['start']['month']
-        gsm_start_day = gsm_date['start']['day']
+        pid_start_year = pid_date['start']['year']
+        pid_start_month = pid_date['start']['month']
+        pid_start_day = pid_date['start']['day']
         
-        gsm_end_year = gsm_date['end']['year']
-        gsm_end_month = gsm_date['end']['month']
-        gsm_end_day = gsm_date['end']['day']
+        pid_end_year = pid_date['end']['year']
+        pid_end_month = pid_date['end']['month']
+        pid_end_day = pid_date['end']['day']
         
-        gsm_start_date = date(int(gsm_start_year), int(gsm_start_month),int(gsm_start_day))
-        gsm_end_date = date(int(gsm_end_year), int(gsm_end_month),int(gsm_end_day))
+        pid_start_date = date(int(pid_start_year), int(pid_start_month),int(pid_start_day))
+        pid_end_date = date(int(pid_end_year), int(pid_end_month),int(pid_end_day))
         
-        if start_date < gsm_start_date < end_date or start_date < gsm_end_date < end_date:
-            gsm_filenames_bydate.append(gsm_filename)
+        if start_date < pid_start_date < end_date or start_date < pid_end_date < end_date:
+            pid_filenames_bydate.append(pid_filename)
     
-    dir_gsm_to = 'GRACE/'+source+'/'+RL+'_'+str(D)
-    
-    if not path.exists(dir_gsm_to): makedirs(dir_gsm_to)
+    if not path.exists(dir_pid_to): makedirs(dir_pid_to)
         
-    for (dirname, dirs, files) in walk(dir_gsm_to): pass
+    for (dirname, dirs, files) in walk(dir_pid_to): pass
     
-    for gsm_filename_bydate in gsm_filenames_bydate:
-        if gsm_filename_bydate[:-3] not in files:
-            gsm_file = path.join(dir_gsm_to,gsm_filename_bydate)
+    for pid_filename_bydate in pid_filenames_bydate:
+        if pid_filename_bydate[:-3] not in files:
+            pid_file = path.join(dir_pid_to,pid_filename_bydate)
             
-            print('Downloading ... ',gsm_filename_bydate,end=' ... ')
+            print('Downloading ... ',pid_filename_bydate,end=' ... ')
             
             # If the download fails, try to download 3 times
             for idownload in range(3):
                 try:
-                    with open(gsm_file, 'wb') as local_file:
-                        if 'GRAC' in gsm_filename_bydate:
-                            res = ftp.retrbinary('RETR ' + dir_gsm_from1 + gsm_filename_bydate, local_file.write) # RETR is an FTP command
-                        if 'GRFO' in gsm_filename_bydate:
-                            res = ftp.retrbinary('RETR ' + dir_gsm_from2 + gsm_filename_bydate, local_file.write) # RETR is an FTP command    
+                    with open(pid_file, 'wb') as local_file:
+                        if 'GRAC' in pid_filename_bydate:
+                            res = ftp.retrbinary('RETR ' + dir_pid_from1 + pid_filename_bydate, local_file.write) # RETR is an FTP command
+                        if 'GRFO' in pid_filename_bydate:
+                            res = ftp.retrbinary('RETR ' + dir_pid_from2 + pid_filename_bydate, local_file.write) # RETR is an FTP command    
                         print(res)
                         local_file.close()   
                         break
                    
                 except:
                     local_file.close()
-                    remove(gsm_file)
+                    remove(pid_file)
                     if idownload == 2: raise Exception('Server did not respond, file download failed')
                     pytime.sleep(20)        
 
-            g_file = GzipFile(gsm_file)
+            g_file = GzipFile(pid_file)
                 
-            open(gsm_file[:-3], "wb").write(g_file.read())
+            open(pid_file[:-3], "wb").write(g_file.read())
             g_file.close()
                 
-            remove(gsm_file)          
+            remove(pid_file)          
     
     ftp.quit()  
     ftp.close()
 
-def parse_gsm_file(filename,lmax):
+def parse_pid_file(filename,lmax):
     '''
     Parse the GRACE GSM Level-2 file.
 
@@ -271,6 +285,9 @@ def parse_gsm_file(filename,lmax):
                 
             elif words[0] == 'order':
                 info['max_order'] = int(words[1]) 
+
+            elif words[0] == 'product_id':
+                info['product_id'] = words[1]     
                 
             elif words[0] == 'normalization':
                 info['normalization'] = words[1]
@@ -279,16 +296,12 @@ def parse_gsm_file(filename,lmax):
                 info['permanent_tide'] = words[1].split()[0]    
                 
             elif words[0] == 'value':
-                if words[1] == '3.9860044150E+14' or words[1] == '3.9860044150e+14':
+                if words[1][-3:] == '+14':
                     info['earth_gravity_param'] = words[1] + ' m3/s2'
-                elif words[1] == '6.3781363000E+06' or words[1] == '6.3781363000e+06':
+                elif words[1][-3:] == '+06':
                     info['mean_equator_radius'] = words[1] + ' m'
-                    info['background_gravity'] = 'GGM05C'
-                elif words[1] == '6.3781364600E+06' or words[1] == '6.3781364600e+06':
-                    info['mean_equator_radius'] = words[1] + ' m'
-                    info['background_gravity'] = 'EIGEN-6C4'
                 else:
-                    raise Exception('unknown background gravity model')
+                    pass
                     
             elif words[0] == 'title':   
                 info['title'] = words[1]
@@ -306,24 +319,43 @@ def parse_gsm_file(filename,lmax):
                 info['product_version'] = words[1]   
                 
             elif words[0] == 'time_coverage_start': 
-                info['time_coverage_start'] = words[1] + ':' + words[2] + ':' + words[3]      
+                time_coverage_start = words[1] + ':' + words[2] + ':' + words[3]      
             
             elif words[0] == 'time_coverage_end': 
-                info['time_coverage_end'] = words[1] + ':' + words[2] + ':' + words[3]
+                time_coverage_end = words[1] + ':' + words[2] + ':' + words[3]
                 
             elif words[0] == 'unused_days':
-                info['unused_days'] = words[1].strip('[ ]').split(', ')
+                unused_days = words[1].strip('[ ]').split(', ')
+                if words[1] == '[]':
+                    num_unused_days = 0
+                else:
+                    num_unused_days = len(unused_days)    
                 
             elif words[0] == 'date_issued': 
                 info['date_issued'] = words[1] + ':' + words[2] + ':' + words[3] 
             else:
-                pass
+                pass  
+
+        info['num_used_days'] =  int(np.around(Time(time_coverage_end).mjd - Time(time_coverage_start).mjd)) -  num_unused_days  
+
+        if info['product_id'] == 'GSM-2':    
+
+            if info['institution'] in ['UT-AUSTIN/CSR','NASA/JPL']:
+                info['background_gravity'] = 'GGM05C'
+            elif 'GFZ' in info['institution']:
+                info['background_gravity'] = 'EIGEN-6C4'   
+            else:
+                raise Exception('Unknown background gravity model.')   
+        else:    
+            info['background_gravity'] = 'mean field from 2003-2014'    
+
+        info['comment'] = ''                  
 
         # read SHCs
         
         cilm = np.zeros((2,lmax + 1, lmax + 1))
         cilm_std = np.zeros_like(cilm)
-        cilm[0,0,0] = 1 # C00 = 1
+        cilm[0,0,0] = 1  # C00 = 1 for GSM product
         
         for line in f:
             words = line.replace('D', 'E').split()
@@ -339,7 +371,7 @@ def parse_gsm_file(filename,lmax):
     f.close()
     return info,cilm,cilm_std   
 
-def read_gsm(source = 'CSR',D = 60,lmax = None,start_date = None,end_date = None,RL = 'RL06'):
+def read_pid(source, pid, lmax = None, start_date = None, end_date = None, level='Level-2', RL = 'RL06'):
     '''
     Read the GRACE GSM Level-2 files. Before calling this program, it is recommended to be able to download all the GRACE GSM data needed using the program GSM_download.
     
@@ -412,64 +444,72 @@ def read_gsm(source = 'CSR',D = 60,lmax = None,start_date = None,end_date = None
     >>> print(jpl_gsm.SHC.shape,jpl_gsm.SHC_std.shape)
     (73, 2, 31, 31) (73, 2, 31, 31)  
     ''' 
-    print_error_grace(source, D, RL)
+    print_error_grace(source, pid, level, RL)
+
+    if pid == 'GSM60':
+        D = 60
+    elif pid == 'GSM96':
+        D = 96
+    elif pid in ['GAA','GAB','GAC','GAD']:
+        D = 180     
+    else:
+        raise Exception("Unknown GRACE product identifier. It should be one of 'GSM60', 'GSM96', 'GAA', 'GAB', GAC', and 'GAD'.")    
     
     if lmax is None: lmax = D
 
     # record the SHCs for each month.
     filelist,filelist_interval = [],[]
-    gsm_dates,gsm_dates_interval = [],[]
+    pid_dates,pid_dates_interval = [],[]
     shc,shc_std = [],[]
     unused_days,date_issued = [],[]
     
     # Go through all GRACE GSM files and put them into the file list.
-    file_dir = 'GRACE/'+source+'/'+RL+'_'+str(D)
+    file_dir = 'GRACE/' + level + '/' + source + '/' + RL + '/' + pid
     for (dirname, dirs, files) in walk(file_dir): pass
 
     # Sort files by month sequences.
     files = np.sort(files)
     
     for filename in files:
-        if 'GSM' in filename:
+        if pid[:3] in filename:
             filelist.append(path.join(dirname,filename)) 
-            gsm_date = parse_gsm_filename(filename) 
-            gsm_dates.append(gsm_date['start']['year']+'-'+gsm_date['start']['month'])
+            pid_date = parse_pid_filename(filename) 
+            pid_dates.append(pid_date['start']['year']+'-'+pid_date['start']['month'])
                 
-    num_solutions = len(gsm_dates)
+    num_solutions = len(pid_dates)
     
     for i in range(num_solutions-1):
-        if gsm_dates[i+1] == gsm_dates[i]:
-            gsm_dates[i+1] = str(np.array(gsm_dates[i+1], dtype=np.datetime64)+ 1)      
+        if pid_dates[i+1] == pid_dates[i]:
+            pid_dates[i+1] = str(np.array(pid_dates[i+1], dtype=np.datetime64)+ 1)      
     
-    if start_date is None: start_date = gsm_dates[0]
-    if end_date is None: end_date = gsm_dates[-1]  
+    if start_date is None: start_date = pid_dates[0]
+    if end_date is None: end_date = pid_dates[-1]  
             
     num_month = (int(end_date[:4]) - int(start_date[:4]))*12 + int(end_date[5:7]) - int(start_date[5:7]) + 1
     month_list = np.array(np.array(start_date, dtype=np.datetime64)+np.arange(num_month),dtype=np.str)
     
     for i in range(num_solutions):
-        if gsm_dates[i] in month_list:
-            gsm_dates_interval.append(gsm_dates[i])
+        if pid_dates[i] in month_list:
+            pid_dates_interval.append(pid_dates[i])
             filelist_interval.append(filelist[i])
 
-    solution_month = gsm_dates_interval
+    solution_month = pid_dates_interval
     solution_counts = len(solution_month)
     missing_solution_flag = ~np.in1d(month_list,solution_month)
     missing_month_list = month_list[missing_solution_flag]        
     missing_month_counts = len(missing_month_list)  
     
     for filename in filelist_interval:
-        info,cilm,cilm_std = parse_gsm_file(filename,lmax)
-        #unused_days += info['unused_days']
-        unused_days.append(info['unused_days'])
+        info,cilm,cilm_std = parse_pid_file(filename,lmax)
+        num_used_days.append(info['num_used_days'])
         date_issued.append(info['date_issued'][:10])
         shc.append(cilm)
         shc_std.append(cilm_std)
 
     shc,shc_std = np.array(shc),np.array(shc_std)         
     
-    info['time_coverage_start'] = start_date
-    info['time_coverage_end'] = end_date
+    info['date_coverage_start'] = start_date
+    info['date_coverage_end'] = end_date
 
     info['total_month'] = month_list
     info['total_month_counts'] = num_month
@@ -477,23 +517,22 @@ def read_gsm(source = 'CSR',D = 60,lmax = None,start_date = None,end_date = None
     info['solution_month'] = solution_month
     info['solution_counts'] = solution_counts
     
-    
     info['missing_month'] = missing_month_list
     info['missing_month_counts'] = missing_month_counts
 
     info['missing_solution_flag'] = missing_solution_flag
 
-    #info['unused_days'] = list(filter(''.__ne__, unused_days))
-    info['unused_days'] = unused_days
+    info['num_used_days'] = num_used_days
     info['date_issued'] = date_issued
     info['title'] = info['title'].replace('GRACE-FO','GRACE & GRACE-FO')
     info['summary'] = info['summary'].replace('GRACE-FO','GRACE & GRACE-FO')
-    info['equi_material'] = 'Water'
-    info['filter'] = 'none'
-           
-    return GSM(info,shc,shc_std)
 
-def gsm_average(gsm_list):
+    info['equi_material'] = 'None'
+    info['filter'] = 'None'
+           
+    return SHM(info,shc,shc_std)
+
+def pid_average(pid_list):
     '''
     Combine the (deaveraged) GSM solution from multiple institutions into an integrated one. The combined solution
     is defined as the average of these solutions.
@@ -517,34 +556,47 @@ def gsm_average(gsm_list):
     >>> print(comb_gsm.institution)
     UT-AUSTIN/CSR, GFZ German Research Centre for Geosciences, NASA/JPL
     '''
-    n = len(gsm_list)
+    n = len(pid_list)
     dic_shc,dic_shc_std = [],[]
     shc,shc_std = [],[]
-    gsm_keys = {}.keys()
+    pid_keys = {}.keys()
     
     for i in range(1,n):
-        if gsm_list[i].degree_order != gsm_list[0].degree_order:
-            raise Exception('Degree and order for gsm in gsm list are not identical.')
-    dim = gsm_list[0].degree_order+1
+        if pid_list[i].degree_order != pid_list[0].degree_order:
+            raise Exception('Degree and order for products are not identical.')
+        if pid_list[i].product_id != pid_list[0].product_id:
+            raise Exception('products id are not identical.')          
+    dim = pid_list[0].degree_order+1
     
     for j in range(n):
+        ratio_r = ratio_gm = 1
+
+        if pid_list[j].product_id == 'GSM-2':
+            if 'Deaveraged' not in pid_list[j].title:
+                if pid_list[j].permanent_tide == 'exclusive':
+                    pid_list[j].shc[:,0,2,0] = pid_list[j].shc[:,0,2,0] - 4.17e-9 # Convert tide-free to tide-zero
+
         # convert Stokes coefficients for a gravity model that is not GGM05C to those for GGM05C
-        if gsm_list[j].mean_equator_radius == '6.3781364600E+06 m':
-            ratio_r = float(gsm_list[j].mean_equator_radius.partition('m')[0])/6.3781363000E6
-            ratio_rl = np.array([ratio_r**l for l in range(dim)])[:,None]
-            ratio_gm = float(gsm_list[j].earth_gravity_param.partition('m3/s2')[0])/3.9860044150E14
-            dic_shc.append(dict(zip(gsm_list[j].solution_month,gsm_list[j].shc*ratio_rl*ratio_gm))) 
-            dic_shc_std.append(dict(zip(gsm_list[j].solution_month,gsm_list[j].shc_std*ratio_rl*ratio_gm)))
-                      
-        dic_shc.append(dict(zip(gsm_list[j].solution_month,gsm_list[j].shc)))
-        dic_shc_std.append(dict(zip(gsm_list[j].solution_month,gsm_list[j].shc_std)))
-        gsm_keys = gsm_keys | dic_shc[j].keys()
-    gsm_keys = np.sort(list(gsm_keys))
+        if pid_list[j].mean_equator_radius != '6.3781363000E+06 m': 
+            ratio_r = float(pid_list[j].mean_equator_radius.partition('m')[0])/6.3781363000E6
+
+        if pid_list[j].earth_gravity_param != '3.9860044150E+14 m3/s2':    
+            ratio_gm = float(pid_list[j].earth_gravity_param.partition('m3/s2')[0])/3.9860044150E14
+
+        ratio_rl = np.array([ratio_r**l for l in range(dim)])[:,None]
+
+
+        dic_shc.append(dict(zip(pid_list[j].solution_month,pid_list[j].shc*ratio_rl*ratio_gm))) 
+        dic_shc_std.append(dict(zip(pid_list[j].solution_month,pid_list[j].shc_std*ratio_rl*ratio_gm)))
+
+        pid_keys = pid_keys | dic_shc[j].keys()
+    pid_keys = np.sort(list(pid_keys))
+
    
     nan_matrix = np.full((2,dim,dim),np.nan)
     none_matrix = np.full((2,dim,dim),None)
 
-    for key in gsm_keys:
+    for key in pid_keys:
         temp1,temp2,temp3 = [],[],[]
         
         for k in range(n):
@@ -557,31 +609,27 @@ def gsm_average(gsm_list):
         shc_std.append(np.sqrt(np.nanmean(temp2,axis=0)/m))
     shc,shc_std = np.array(shc),np.array(shc_std)   
     
-    start_date = np.sort([gsm_list[k].info['time_coverage_start'] for k in range(n)])[0]
-    end_date = np.sort([gsm_list[k].info['time_coverage_end'] for k in range(n)])[-1]
+    start_date = np.sort([pid_list[k].info['date_coverage_start'] for k in range(n)])[0]
+    end_date = np.sort([pid_list[k].info['date_coverage_end'] for k in range(n)])[-1]
     num_month = (int(end_date[:4]) - int(start_date[:4]))*12 + int(end_date[5:7]) - int(start_date[5:7]) + 1
     month_list = np.array(np.array(start_date, dtype=np.datetime64)+np.arange(num_month),dtype=np.str)
-    solution_month = list(gsm_keys)
+    solution_month = list(pid_keys)
     solution_counts = len(solution_month)
     missing_solution_flag = ~np.in1d(month_list,solution_month)
     missing_month_list = month_list[missing_solution_flag]       
     missing_month_counts = len(missing_month_list) 
     
-    info = gsm_list[0].info.copy()
-    title = gsm_list[0].info['title']
-    info['permanent_tide'] = 'inclusive'
+    info = pid_list[0].info.copy()
+    title = pid_list[0].info['title']
+  
 
-    if gsm_list[0].background_gravity == 'Average of monthly solutions':
-        info['background_gravity'] = 'Average of monthly solutions'
-    else:
-        info['background_gravity'] = 'GGM05C'
     info['earth_gravity_param'] = '3.9860044150E+14 m3/s2'
     info['mean_equator_radius'] = '6.3781363000E+06 m'
 
     info['title'] = 'Combined ' + title.replace(title[-9:-5],'')
-    info['summary'] = info['summary'].partition("product.")[0] + 'product.'
-    info['time_coverage_start'] = start_date
-    info['time_coverage_end'] = end_date
+    info['summary'] = ''
+    info['date_coverage_start'] = start_date
+    info['date_coverage_end'] = end_date
 
     info['total_month'] = month_list
     info['total_month_counts'] = num_month
@@ -593,10 +641,15 @@ def gsm_average(gsm_list):
     info['missing_month_counts'] = missing_month_counts
 
     info['missing_solution_flag'] = missing_solution_flag
-    
-    info['unused_days'] = 'Invalid'
-    info['date_issued'] = 'Invalid'
 
+    # delete keys
+    for key in ['date_issued','num_used_days']:
+        info.pop(key,None)
+
+    if info['product_id'] == 'GSM-2':
+        info['background_gravity'] = 'GGM05C'
+        info['permanent_tide'] = 'inclusive'
+        
     for k in range(1,n):
-        info['institution'] = info['institution'] + ', ' + gsm_list[k].info['institution']
-    return GSM(info,shc,shc_std)
+        info['institution'] = info['institution'] + ', ' + pid_list[k].info['institution']
+    return SHM(info,shc,shc_std)

@@ -66,41 +66,20 @@ class GSM(object):
     '''
     def __init__(self,info,shc,shc_std):
         self.info = info
-        self.degree_order = info['degree_order']
-        self.max_degree = info['max_degree']
-        self.max_order = info['max_order'] 
-        self.normalization = info['normalization'] 
-        self.permanent_tide = info['permanent_tide'] 
-        self.earth_gravity_param = info['earth_gravity_param']
-        self.mean_equator_radius = info['mean_equator_radius']
-        self.background_gravity = info['background_gravity']
-        self.title = info['title']
-        self.summary = info['summary']
-        self.institution = info['institution']
-        self.processing_level = info['processing_level']
-        self.product_version = info['product_version']
-        self.time_coverage_start = info['time_coverage_start']
-        self.time_coverage_end = info['time_coverage_end']
-        self.total_month = info['total_month']
-        self.total_month_counts = info['total_month_counts']
-        self.solution_month = info['solution_month'] 
-        self.solution_counts = info['solution_counts'] 
-        self.missing_month = info['missing_month']
-        self.missing_month_counts = info['missing_month_counts']
-        self.missing_solution_flag = info['missing_solution_flag']
-        self.unused_days = info['unused_days']
-        self.date_issued = info['date_issued']
-        self.equi_material = info['equi_material']
-        self.filter = info['filter']
+
+        for key in info.keys():
+            setattr(self, key, info[key])  
         
         self.shc = shc
         self.shc_std = shc_std
         
     def __repr__(self):
-    
-        return 'title = {:s}\nmax_degree = {:d}\nmax_order = {:d}\ndegree_order = {:d}\nnormalization = {:s}\ninstitution = {:s}\nprocessing_level = {:s}\nproduct_version = {:s}\ntime_coverage_start = {:s}\ntime_coverage_end = {:s}\nsolution_counts = {:d}\ntotal_month_counts = {:d}\nmissing_month_counts = {:d}'.format\
-        (self.title,self.max_degree,self.max_order,self.degree_order,self.normalization,self.institution,self.processing_level,self.product_version,self.time_coverage_start,self.time_coverage_end,self.solution_counts,self.total_month_counts,self.missing_month_counts)
-    
+
+        outkeys = ['title','product_id','max_degree','max_order','degree_order','normalization','institution','processing_level','product_version','date_coverage_start','date_coverage_end','solution_counts','total_month_counts','missing_month_counts','comment']
+        for key in outkeys:
+            print(key + ' = ', getattr(self,key))
+        return self.product_id + ' instance of class SHM'   
+
     def deaverage(self):
         
         '''
@@ -116,13 +95,13 @@ class GSM(object):
         >>> csr_gsm_d = csr_gsm.deaverage()
         >>> print(csr_gsm_d)
         ''' 
-        info = self.info.copy()  
 
         shc_deaverage = self.shc - np.average(self.shc,axis=0)
         
+        info = self.info.copy()
         info['title'] = 'Deaveraged ' + info['title']
-        info['background_gravity'] = 'Average of monthly solutions'
-        return GSM(info,shc_deaverage,self.shc_std)
+        #info['background_gravity'] = 'Average of monthly solutions'
+        return SHM(info,shc_deaverage,self.shc_std)
 
     def debackground(self):
         
@@ -139,7 +118,10 @@ class GSM(object):
         >>> csr_gsm_d = csr_gsm.debackground()
         >>> print(csr_gsm_d)
         ''' 
-        info = self.info.copy()
+
+        if self.product_id != 'GSM-2': 
+            raise Exception('The background gravity models have been removed for GAA, GAB, GAC, and GAD products with a mean field from 2003-2014.')
+
         degree_order = self.degree_order
         background_gravity = self.background_gravity
         gravity_file = static_download(background_gravity)
@@ -148,11 +130,13 @@ class GSM(object):
         elif background_gravity == 'EIGEN-6C4':  
             cilm,gm,r0,errors = read_icgem_gfc(gravity_file,lmax=degree_order,errors='formal')
         else:
-            raise Exception('Currently, available background gravity models are GGM05C and EIGEN-6C4')        
+            raise Exception('Currently, available background gravity models are GGM05C and EIGEN-6C4.')        
 
         shc_debackground = self.shc - cilm
+
+        info = self.info.copy()
         info['title'] = 'Debackgrounded ' + info['title']
-        return GSM(info,shc_debackground,self.shc_std)        
+        return SHM(info,shc_debackground,self.shc_std)         
     
     def replace_slr_c20(self,slr_c20):
         '''
@@ -171,15 +155,18 @@ class GSM(object):
         >>> csr_gsm_r = csr_gsm.replace_slr_c20(slr_c20)
         >>> print(csr_gsm_r)
         '''
+
+        if self.product_id != 'GSM-2': raise Exception('Not applicable to GAA, GAB, GAC, and GAD products.')
+
         shc,shc_std = self.shc.copy(),self.shc_std.copy()
         shc[:,0,2,0] = slr_c20.c20
         shc_std[:,0,2,0] = slr_c20.c20_std
         
         info = self.info.copy()
-        info['title'] = info['title'] + ' with C20 replaced by the SLR measurements'
-        info['summary'] = info['summary'] + ' Note that the 2nd-degree terms have been replaced with the values from SLR C20.' 
         
-        return GSM(info,shc,shc_std)
+        info['comment'] = info['comment'] + 'The 2nd-degree term(C20) has been replaced with that from SLR. ' 
+        
+        return SHM(info,shc,shc_std)
     
     def filter_ddk(self,filter_type = 'DDK5'):
         
@@ -208,16 +195,18 @@ class GSM(object):
         Spherical harmonic coefficients representing an estimate of the mean gravity field of Earth during the specified timespan derived from GRACE mission measurements. These coefficients represent the full magnitude of land hydrology, ice, and solid Earth processes. Further, they represent atmospheric and oceanic processes not captured in the accompanying GAC product. The 0th and 1st degree terms are excluded from CSR level-2. Note that the 2nd degree terms have been replaced by the C20 values from SLR. Also note that C20 values from SLR also experienced the DDK5 filtering.
         '''
 
+        if self.product_id != 'GSM-2': raise Exception('Not applicable to GAA, GAB, GAC, and GAD products.')
+
         filter_shc,filter_shc_std = filter_ddk(filter_type,self.shc,self.shc_std)
             
         info = self.info.copy()
         info['title'] = filter_type + ' filtered ' + info['title']
         info['filter'] = filter_type
         
-        if 'with C20 replaced by the SLR measurements' in info['title']:
-            info['summary'] = info['summary'] + ' Also note that C20 from SLR also experienced the ' + filter_type + ' filtering.' 
+        if 'C20' in info['comment']:
+            info['comment'] = info['comment'] + 'Note that C20 from SLR also experienced the ' + filter_type + ' filtering. ' 
           
-        return GSM(info,filter_shc,filter_shc_std)
+        return SHM(info,filter_shc,filter_shc_std)
     
     def filter_gaussian(self,r):
         '''
@@ -243,18 +232,19 @@ class GSM(object):
         >>> print(csr_gsm_fgau.summary)
         Spherical harmonic coefficients representing an estimate of the mean gravity field of Earth during the specified timespan derived from GRACE mission measurements. These coefficients represent the full magnitude of land hydrology, ice, and solid Earth processes. Further, they represent atmospheric and oceanic processes not captured in the accompanying GAC product. The 0th and 1st degree terms are excluded from CSR level-2. Note that the 2nd degree terms have been replaced by the C20 values from SLR. Also note that C20 values from SLR also experienced the Gaussian filtering.
         '''
+
         filter_shc,filter_shc_std = filter_gaussian(r,self.shc,self.shc_std)
         
         info = self.info.copy()
         info['title'] = 'Gaussian filtered ' + info['title']
         info['filter'] = 'Gaussian filter with radius of '+str(r) + ' km'
         
-        if 'with C20 replaced by the SLR measurements' in info['title']:
-            info['summary'] = info['summary'] + ' Also note that C20 from SLR also experienced the Gaussian filtering.' 
+        if 'C20' in info['comment']:
+            info['comment'] = info['comment'] + 'Note that C20 from SLR also experienced the Gaussian filtering. ' 
         
-        return GSM(info,filter_shc,filter_shc_std)
+        return SHM(info,filter_shc,filter_shc_std)
     
-    def sma(self, equi_material = None):
+    def equim(self, equi_material = 'Water'):
         '''
         Convert Stokes coefficents(or rates) for GSM to that for Surface Mass Anomaly in Equivalent Water(or Ice, Sand) Thickness(EWT) with unit of [mm w.e.](or [mm i.e.],[mm s.e.]) or [mm w.e./yr](or [mm i.e./yr],[mm s.e./yr]) 
 
@@ -283,8 +273,8 @@ class GSM(object):
         >>> print(sma.material)
         Sand
         '''
-        if equi_material is None:
-            equi_material = self.equi_material
+
+        if self.equi_material != 'None': raise Exception('Conversion between Stokes coefficents for Equivalent Water(Ice, or Sand) Thickness is not suppoorted.')
             
         if equi_material == 'Water':
             rho = 1000
@@ -293,7 +283,7 @@ class GSM(object):
         elif equi_material == 'Sand':
             rho = 1442
         else:
-            raise Exception('Currently, the equivalent material for SMA can only be Water, Ice, or Sand.')
+            raise Exception('Currently, the equivalent material can only be Water, Ice, or Sand.')
             
         # Calculate the average density of the Earth
         G = 6.67430e-11
@@ -312,16 +302,14 @@ class GSM(object):
             sma_shc_std[:,:,l,:] = factor*self.shc_std[:,:,l,:]*1e3
             
         info = self.info.copy()
-        if 'change rate' in info['title']:
-            info['title'] = 'Stokes coefficients for annual change rate of Surface Mass Anomaly(SMA) in Equivalent ' + equi_material + ' Thickness(EWT) derived from the ' + info['title']
-            info['summary'] = info['summary'].replace('mean gravity field of Earth','Surface Mass Anomaly(SMA) expressed in terms of Equivalent ' + equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness(EWT) with unit of [mm '+equi_material[0].lower()+'.e./yr]')
+        if 'rate' in info['title']:
+            info['title'] = info['title'] + ' in Equivalent ' +  equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness with unit of mm/yr ' 
         else:    
-            info['title'] = 'Stokes coefficients for Surface Mass Anomaly(SMA) in Equivalent ' + equi_material + ' Thickness(EWT) derived from the ' + info['title']
-            info['summary'] = info['summary'].replace('mean gravity field of Earth','Surface Mass Anomaly(SMA) expressed in terms of Equivalent ' + equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness(EWT) with unit of [mm '+equi_material[0].lower()+'.e.]')
+            info['title'] = info['title'] + ' in Equivalent ' +  equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness with unit of mm ' 
         info['equi_material'] = equi_material
-        return GSM(info,sma_shc,sma_shc_std)
+        return SHM(info,sma_shc,sma_shc_std)
     
-    def gsm(self):
+    def equim_inv(self):
         '''
         Convert Stokes coefficents for Surface Mass Anomaly in Equivalent Water(or Ice, Sand) Thickness(EWT) with unit of [mm w.e.] to that for GSM 
 
@@ -398,7 +386,7 @@ class GSM(object):
         else:    
             info['title'] = info['title'].replace('Stokes coefficients for Surface Mass Anomaly(SMA) in Equivalent ' + equi_material + ' Thickness(EWT) derived from the ','')
             info['summary'] = info['summary'].replace('Surface Mass Anomaly(SMA) expressed in terms of Equivalent ' + equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness(EWT) with unit of [mm '+equi_material[0].lower()+'.e.]','mean gravity field of Earth')
-        return GSM(info,gsm_shc,gsm_shc_std)
+        return SHM(info,gsm_shc,gsm_shc_std)
     
     def rate(self,mode='ILSQM'):
         '''
@@ -458,12 +446,9 @@ class GSM(object):
                     else:
                         raise Exception('Currently, the least square method can only be LSQM, WLSQM, ILSQM, and IWLSQM.')
         info = self.info.copy()
-        info['title'] = 'Annual change rate of ' + info['title']
-        info['summary'] = info['summary'].replace('an estimate of','an estimate of annual change rate of')
-        for em in ['w','i','s']:
-            info['summary'] = info['summary'].replace('[mm '+em+'.e.]','[mm '+em+'.e./yr]')
+        info['title'] = 'Annual rate of ' + info['title']
 
-        return GSM(info,np.array([shc_rate]),np.array([shc_rate_std]))
+        return SHM(info,np.array([shc_rate]),np.array([shc_rate_std]))
     
     def grid(self,region=None):
         '''
@@ -515,18 +500,20 @@ class GSM(object):
         else:
             region = 'globe'
             grids_region = grids
+            # Note: Since it takes a lot of time to calculate the uncertainties of the global grid data, the uncertainties are all set to zero.                   
             grids_std_region = np.zeros_like(grids_region)
             lons_region,lats_region = lons,lats
             lons_flag = np.ones(len(lons_region),dtype=bool)
             lats_flag = np.ones(len(lats_region),dtype=bool)
 
-            # Note: Since it takes a lot of time to calculate the uncertainties of the global grid data, the uncertainties are all set to zero.                   
-        
+        nlats = len(lats_region)   
+        nlons = len(lons_region)        
+    
         info = self.info.copy()
         info['title'] =  'Grids expanded from ' + info['title']
-        info['summary'] = info['summary'].replace('Spherical harmonic coefficients','Grids')
-        info['summary'] = info['summary'].replace('coefficients','grids')
         info['region'] = region
+        info['nlats'] = nlats
+        info['nlons'] = nlons
         
         return Grid(info,grids_region,grids_std_region,lons_region,lats_region,lons_flag,lats_flag)
     
@@ -543,7 +530,7 @@ class GSM(object):
        
         qs,qs_std = [],[]
         north_pole = create_polygon(points).contains_points([90,0]) # Determine if the North Pole is inside the study area
-        mask_grid = Curve2Mask(2*(self.degree_order+1),points,north_pole,sampling=2)
+        mask_grid = Curve2Mask(2*(self.degree_order+1),points,north_pole,sampling=2,extend=True)
         mask_shc = SHExpandDH(mask_grid,sampling=2)
         
         area = mask_shc[0,0,0]*4*np.pi*a**2 # km^2
@@ -652,7 +639,7 @@ class GSM(object):
             add_shc = self_shc + other_shc
             add_shc_std = np.sqrt(self_shc_std**2 + other_shc_std**2)
         
-        return GSM(info,add_shc,add_shc_std)
+        return SHM(info,add_shc,add_shc_std)
     
     def __sub__(self,other):
 
@@ -712,7 +699,7 @@ class GSM(object):
             sub_shc = self_shc - other_shc
             sub_shc_std = np.sqrt(self_shc_std**2 + other_shc_std**2)
         
-        return GSM(info,sub_shc,sub_shc_std)
+        return SHM(info,sub_shc,sub_shc_std)
     
     def __mul__(self,other):
         pass
