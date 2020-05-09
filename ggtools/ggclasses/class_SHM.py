@@ -17,7 +17,7 @@ from ..gg.leakage import spectral_domain
 from .class_Grid import Grid
 from .class_Series import Series
 
-class GSM(object):
+class SHM(object):
     '''
     class GSM
     - attributes:
@@ -303,9 +303,11 @@ class GSM(object):
             
         info = self.info.copy()
         if 'rate' in info['title']:
-            info['title'] = info['title'] + ' in Equivalent ' +  equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness with unit of mm/yr ' 
+            info['title'] = info['title'] + ' in Equivalent ' +  equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness' 
+            info['unit'] = 'mm/yr'
         else:    
-            info['title'] = info['title'] + ' in Equivalent ' +  equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness with unit of mm ' 
+            info['title'] = info['title'] + ' in Equivalent ' +  equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness' 
+            info['unit'] = 'mm'
         info['equi_material'] = equi_material
         return SHM(info,sma_shc,sma_shc_std)
     
@@ -351,6 +353,9 @@ class GSM(object):
         >>> print(gsm.SHC[100,0,30,20])
         1.8369657302246403e-12
         '''
+
+        if self.equi_material == 'None': raise Exception('Conversion fail')
+            
         
         equi_material = self.equi_material
         
@@ -379,13 +384,12 @@ class GSM(object):
             gsm_shc_std[:,:,l,:] = factor*self.shc_std[:,:,l,:]/1e3
             
         info = self.info.copy()
-        if 'change rate' in info['title']:
-            info['title'] = info['title'].replace('Stokes coefficients for annual change rate of Surface Mass Anomaly(SMA) in Equivalent ' + equi_material + ' Thickness(EWT) derived from the ','')
-            info['title'] = info['title'].replace('Stokes coefficients for Surface Mass Anomaly(SMA) in Equivalent ' + equi_material + ' Thickness(EWT) derived from the ','')
-            info['summary'] = info['summary'].replace('Surface Mass Anomaly(SMA) expressed in terms of Equivalent ' + equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness(EWT) with unit of [mm '+equi_material[0].lower()+'.e./yr]','mean gravity field of Earth')
-        else:    
-            info['title'] = info['title'].replace('Stokes coefficients for Surface Mass Anomaly(SMA) in Equivalent ' + equi_material + ' Thickness(EWT) derived from the ','')
-            info['summary'] = info['summary'].replace('Surface Mass Anomaly(SMA) expressed in terms of Equivalent ' + equi_material + '['+ str(rho)+ 'kg/m3]' + ' Thickness(EWT) with unit of [mm '+equi_material[0].lower()+'.e.]','mean gravity field of Earth')
+
+        info['title'] = info['title'].split(' in Equivalent ')[0]
+        info['equi_material'] = 'None'
+
+        info.pop('unit',None)
+  
         return SHM(info,gsm_shc,gsm_shc_std)
     
     def rate(self,mode='ILSQM'):
