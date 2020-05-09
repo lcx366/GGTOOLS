@@ -2,7 +2,7 @@ import numpy as np
 from os import path,makedirs
 from pathlib import Path
 from urllib.request import urlretrieve
-from time import sleep
+import time as pytime
 
 from .DDK_filter.read_BIN import read_BIN
 from .DDK_filter.filterSH import filterSH
