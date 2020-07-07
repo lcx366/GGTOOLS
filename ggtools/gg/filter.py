@@ -36,7 +36,7 @@ def filter_ddk(filter_type,shc,shc_std=None):
     filter_shc_std = np.zeros_like(shc_std)
 
     # Download the DDK filter matrices
-    home = getenv('HOME')
+    home = str(Path.home())
     direc = home + '/src/ddk-data/'
     ddk_types = ['1d14','1d13','1d12','5d11','1d11','5d10','1d10','5d9']   
     urldir = 'https://raw.githubusercontent.com/strawpants/GRACE-filter/master/data/DDK/'
