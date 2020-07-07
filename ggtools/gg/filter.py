@@ -1,5 +1,6 @@
 import numpy as np
-from os import getenv,path,makedirs
+from os import path,makedirs
+from pathlib import Path
 from urllib.request import urlretrieve
 from time import sleep
 
